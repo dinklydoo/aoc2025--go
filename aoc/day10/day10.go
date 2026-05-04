@@ -1,7 +1,6 @@
 package day10
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -96,32 +95,43 @@ func Part1(input string) int {
 	return res
 }
 
+func routine(factory *factory, accumulator chan int) {
+	n := len(factory.joltage)
+	m := len(factory.buttons) + 1
+
+	matrix := make([][]int, n)
+	for i := range matrix {
+		matrix[i] = make([]int, m)
+	}
+
+	for i, button := range factory.buttons {
+		for _, b := range button {
+			matrix[b][i] = 1
+		}
+	}
+	for i, jolt := range factory.joltage {
+		matrix[i][m-1] = jolt
+	}
+
+	matrix = Reduce(matrix) // int row form of linear system
+
+	temp := Solve(matrix)
+	//fmt.Println(temp)
+
+	accumulator <- temp
+}
+
 func Part2(input string) int {
 	factories := formatInput(input)
 	res := 0
 
-	for _, factory := range factories {
-		n := len(factory.joltage)
-		m := len(factory.buttons) + 1
+	accumulator := make(chan int)
+	for _, fact := range factories {
+		go routine(&fact, accumulator)
+	}
 
-		matrix := make([][]int, n)
-		for i := range matrix {
-			matrix[i] = make([]int, m)
-		}
-
-		for i, button := range factory.buttons {
-			for _, b := range button {
-				matrix[b][i] = 1
-			}
-		}
-		for i, jolt := range factory.joltage {
-			matrix[i][m-1] = jolt
-		}
-
-		matrix = Reduce(matrix) // int row form of linear system
-
-		temp := Solve(matrix)
-		fmt.Println(temp)
+	for range factories {
+		temp := <-accumulator
 		res += temp
 	}
 	return res
