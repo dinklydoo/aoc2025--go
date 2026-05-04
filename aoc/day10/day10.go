@@ -3,7 +3,6 @@ package day10
 import (
 	"fmt"
 	"math"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -55,7 +54,7 @@ func formatInput(input string) []factory {
 
 func Part1(input string) int {
 	factories := formatInput(input)
-	// this is probs NP-hard (SAT-like) so brute force with power set, our input seems limited by like 10 button configurations so pre chill
+	// this is NP-hard (SAT-like) so brute force with power set, our input seems limited by like 10 button configurations so pre chill
 	res := 0
 	for i := range factories {
 		factory := &factories[i]
@@ -97,77 +96,33 @@ func Part1(input string) int {
 	return res
 }
 
-func hash(v []int) uint64 {
-	var h uint64 = 1469598103934665603
-	const prime uint64 = 1099511628211
-
-	for _, x := range v {
-		h ^= uint64(x + 1)
-		h *= prime
-	}
-	return h
-}
-
-func bfs(factory *factory) int {
-	visited := make(map[uint64]bool)
-	var queue [][]int
-	press := 0
-	count := 1
-	queue = append(queue, slices.Clone(factory.joltage))
-	for len(queue) > 0 {
-		if count == 0 {
-			press++
-			count = len(queue)
-		}
-		top := queue[0]
-		queue = queue[1:]
-
-		good := true
-		for _, jolt := range top {
-			if jolt > 0 {
-				good = false
-				break
-			}
-		}
-		if good {
-			return press
-		}
-
-		for _, button := range factory.buttons {
-			good := true
-			for _, b := range button {
-				if top[b] == 0 {
-					good = false
-					break
-				}
-			}
-			if good {
-				temp := slices.Clone(top)
-				for _, b := range button {
-					temp[b]--
-				}
-				hash := hash(temp)
-				if visited[hash] {
-					continue
-				} else {
-					visited[hash] = true
-				}
-				queue = append(queue, temp)
-			}
-		}
-		count--
-	}
-	return -1
-}
-
-// TODO too slow, need Gaussian Elim
-
 func Part2(input string) int {
 	factories := formatInput(input)
 	res := 0
+
 	for _, factory := range factories {
-		res += bfs(&factory)
-		fmt.Println(res)
+		n := len(factory.joltage)
+		m := len(factory.buttons) + 1
+
+		matrix := make([][]int, n)
+		for i := range matrix {
+			matrix[i] = make([]int, m)
+		}
+
+		for i, button := range factory.buttons {
+			for _, b := range button {
+				matrix[b][i] = 1
+			}
+		}
+		for i, jolt := range factory.joltage {
+			matrix[i][m-1] = jolt
+		}
+
+		matrix = Reduce(matrix) // int row form of linear system
+
+		temp := Solve(matrix)
+		fmt.Println(temp)
+		res += temp
 	}
 	return res
 }

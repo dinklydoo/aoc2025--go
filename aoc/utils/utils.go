@@ -20,6 +20,21 @@ func Pow(b int, e int) int {
 	return res
 }
 
+// GCD : gcd of two ints
+func GCD(a, b int) int {
+	for b != 0 {
+		t := b
+		b = a % b
+		a = t
+	}
+	return a
+}
+
+// LCM : lcm of two ints
+func LCM(a, b int) int {
+	return a * b / GCD(a, b)
+}
+
 // Primes : return all prime numbers < n
 func Primes(n int) []int {
 	sieve := make([]bool, n)
