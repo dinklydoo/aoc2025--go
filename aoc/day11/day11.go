@@ -38,7 +38,13 @@ func Part1(input string) int {
 	return dfs(conn, "you")
 }
 
-func dfs2(conn map[string][]string, current string, fft bool, dac bool) int {
+type state struct {
+	node string
+	fft  bool
+	dta  bool
+}
+
+func dfs2(conn map[string][]string, cache map[state]int, current string, fft bool, dac bool) int {
 	if current == "out" {
 		if fft && dac {
 			return 1
@@ -49,31 +55,22 @@ func dfs2(conn map[string][]string, current string, fft bool, dac bool) int {
 	isFFT := current == "fft"
 	isDAC := current == "dac"
 
+	state := state{node: current, fft: fft, dta: dac}
+	if val, ok := cache[state]; ok {
+		return val
+	}
+
 	res := 0
 	for _, next := range conn[current] {
-		res += dfs2(conn, next, fft || isFFT, dac || isDAC)
+		res += dfs2(conn, cache, next, fft || isFFT, dac || isDAC)
 	}
+	cache[state] = res
 	return res
 }
 
-// TODO : too slow, need to do some topo sort shenanigans, issue is nodes are restricted to be funneled bw fft and dta
-/* Traversal paths looks like this
-	out
-//// \\\ \\
-	...
-\\ \ / \ // /
-	fft
-//// \\\ \\
-	...
-\\	\\///
-	dta
-//// \\\ \\
-	...
-	\ //
-	out
-*/
-
 func Part2(input string) int {
 	conn := formatInput(input)
-	return dfs2(conn, "svr", false, false)
+	cache := make(map[state]int)
+
+	return dfs2(conn, cache, "svr", false, false)
 }
